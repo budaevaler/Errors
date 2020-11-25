@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Data;
 using Errors.Core;
 using Errors.Models;
 using Newtonsoft.Json;
@@ -21,23 +22,42 @@ namespace Errors.ViewModel
         #region Fields
 
         private static string PathToErrors = "D:\\Работа\\Временные файлы\\LoggerJournal";
-        private ObservableCollection<Error> _unfixedErrorCollection; 
-
+        private bool _isSelectedUnfixedError;
+        private string _selectedNameAddin;
         #endregion
 
         #region Properties
         public List<string> NameAddinCollection { get; set; }= new List<string>();
-        public string SelectedNameAddin { get; set; } = "Все ошибки";
-        public bool IsSelectedUnfixedError { get; set; }
 
+        public string SelectedNameAddin
+        {
+            get => _selectedNameAddin;
+            set
+            {
+                if (value==_selectedNameAddin)
+                    return;
+                _selectedNameAddin = value;
+                ErrorCollectionViewSource?.View?.Refresh();
+            }
+        }
 
-        public ObservableCollection<Error> UnfixedErrorCollection { get; set; }=new ObservableCollection<Error>();
-        public ObservableCollection<Error> TempName { get; set; }
-        public ObservableCollection<Error> TempFixing { get; 
-            set; }
-        public ObservableCollection<Error> ErrorCollection { get; 
-            set; }
+        public bool IsSelectedUnfixedError
+        {
+            get => _isSelectedUnfixedError;
+            set
+            {
+                _isSelectedUnfixedError = value;
+                Stopwatch watch = new Stopwatch();
+                watch.Start();
+                ErrorCollectionViewSource?.View?.Refresh();
+                watch.Stop();
+                TimeSpan ts = watch.Elapsed;
+                Debug.WriteLine($"-----------Time:{ts}");
+            }
+        }
+        public ObservableCollection<Error> ErrorCollection { get; set; }
 
+        public CollectionViewSource ErrorCollectionViewSource { get; set; }
 
         public Error ErrorDetail { get; set; }
 
@@ -47,7 +67,7 @@ namespace Errors.ViewModel
 
         public RelayCommand SaveAllFixedErrorCommand => new RelayCommand(o =>
         {
-            foreach (var error in TempName)
+            foreach (var error in ErrorCollection)
             {
                 string format = "yyyyddMMHHmmss";
                 string fn = error.Time.ToString(format);
@@ -68,74 +88,10 @@ namespace Errors.ViewModel
             }
         });
 
-        public RelayCommand ChangeTypeOfAddinsCommand =>new RelayCommand(o =>
-        {
-            ErrorCollection=FilterName(TempName);
-        });
-
-        public RelayCommand FixingFilterCommand=>new RelayCommand(o =>
-        {
-            Stopwatch watch = new Stopwatch();
-            watch.Start();
-            UnfixedErrorCollection = new ObservableCollection<Error>(TempFixing.Where(x => x.IsFixed == false));
-            ErrorCollection = FilterFixed(TempFixing,UnfixedErrorCollection);
-            watch.Stop();
-            TimeSpan ts = watch.Elapsed;
-            Debug.WriteLine($"----------Time:{ts}");
-        });
-
-        public RelayCommand UpdateFixedErrorCommand=>new RelayCommand(o =>
-        {
-            
-            //if (o is Error error)
-            //{
-            //    if (TempFixing.Contains(error))
-            //    {
-            //        int n = TempFixing.IndexOf(error);
-            //        TempFixing[n].IsFixed = error.IsFixed;
-            //    }
-            //    if (UnfixedErrorCollection.Contains(error))
-            //    {
-            //        int n = UnfixedErrorCollection.IndexOf(error);
-            //        UnfixedErrorCollection[n].IsFixed = error.IsFixed;
-            //    }
-            //}
-        });
-
         #endregion
 
         #region Methods
 
-        ObservableCollection<Error> FilterFixed(ObservableCollection<Error> errorCollection, ObservableCollection<Error> unfixedErrorCollection)
-        {
-           if (IsSelectedUnfixedError == true)
-               return unfixedErrorCollection;
-           else return errorCollection;
-        }
-
-       ObservableCollection<Error> FilterName(ObservableCollection<Error> errorCollection)
-       {
-           if (SelectedNameAddin == "Все ошибки")
-           {
-               UnfixedErrorCollection = new ObservableCollection<Error>(errorCollection.Where(x => x.IsFixed == false));
-               TempFixing = errorCollection;
-               return FilterFixed(errorCollection, UnfixedErrorCollection);
-           }
-           else
-           {
-               TempFixing = new ObservableCollection<Error>();
-               foreach (var error in errorCollection)
-               {
-                   if (SelectedNameAddin == error.NameAddin)
-                   {
-                       TempFixing.Add(error);
-                   }
-
-               }
-               UnfixedErrorCollection = new ObservableCollection<Error>(TempFixing.Where(x => x.IsFixed == false));
-               return FilterFixed(TempFixing, UnfixedErrorCollection);
-           }
-       }
         public void Initialize()
         {
             ErrorCollection=new ObservableCollection<Error>();
@@ -149,8 +105,32 @@ namespace Errors.ViewModel
                 sr.Close();
             }
             ErrorCollection = new ObservableCollection<Error>(ErrorCollection.OrderBy(x => x.NameAddin).ThenBy(x => x.Massage).ToList());
+
             NameAddinCollection = ErrorCollection.Select(x => x.NameAddin).Distinct().ToList();
             NameAddinCollection.Add("Все ошибки");
+
+            ErrorCollectionViewSource = new CollectionViewSource
+            {
+                Source = ErrorCollection,
+                IsLiveFilteringRequested = true
+            };
+            ErrorCollectionViewSource.Filter += (sender, args) =>
+            {
+                var error = args.Item as Error;
+                if (_isSelectedUnfixedError)
+                {
+                    if (error?.IsFixed == true)
+                        args.Accepted = false;
+                }
+
+                if (SelectedNameAddin != "Все ошибки")
+                {
+                    if (error?.NameAddin != _selectedNameAddin)
+                        args.Accepted = false;
+                }
+            };
+
+            SelectedNameAddin = "Все ошибки";
         }
 
         void Serialize(string path, Error error)
@@ -162,9 +142,6 @@ namespace Errors.ViewModel
             File.WriteAllText(path, jsonString);
         }
 
-
-
-
         #endregion
 
         #region Constructors
@@ -172,13 +149,6 @@ namespace Errors.ViewModel
         public ErrorViewModel()
         {
             Initialize();
-            TempName = ErrorCollection;
-            TempFixing = ErrorCollection;
-            foreach (var error in ErrorCollection)
-            {
-                if (error.IsFixed==false)
-                    UnfixedErrorCollection.Add(error);
-            }
         }
 
         #endregion

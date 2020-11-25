@@ -34,12 +34,6 @@
         </Grid.ColumnDefinitions>
         <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
             <ComboBox ItemsSource="{Binding NameAddinCollection}" SelectedItem="{Binding SelectedNameAddin}" Width="380" Margin="10 0 0 10">
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="SelectionChanged">
-                        <i:InvokeCommandAction Command="{Binding ChangeTypeOfAddinsCommand}">
-                        </i:InvokeCommandAction>
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
             </ComboBox>
             <materialDesign:PopupBox Margin="10 0 0 10" >
             <materialDesign:PopupBox.ToggleContent>
@@ -47,16 +41,6 @@
             </materialDesign:PopupBox.ToggleContent>
             <StackPanel Orientation="Horizontal">
                 <CheckBox IsChecked="{Binding IsSelectedUnfixedError}">
-                    <i:Interaction.Triggers>
-                        <i:EventTrigger EventName="Checked">
-                                <i:InvokeCommandAction Command="{Binding FixingFilterCommand}">
-                                </i:InvokeCommandAction>
-                        </i:EventTrigger>
-                        <i:EventTrigger EventName="Unchecked">
-                            <i:InvokeCommandAction Command="{Binding FixingFilterCommand}">
-                            </i:InvokeCommandAction>
-                        </i:EventTrigger>
-                        </i:Interaction.Triggers>
                 </CheckBox>
                 <TextBlock Text="Показать только неисправленные ошибки"></TextBlock>
             </StackPanel>
@@ -64,20 +48,17 @@
             
         </StackPanel>
 
-        <DataGrid ItemsSource="{Binding ErrorCollection}"
+        <DataGrid ItemsSource="{Binding ErrorCollectionViewSource.View}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
-                  
                   Grid.Column="0"
                   Grid.Row="1"
                   Name="dgErrors"
                   SelectedItem="{Binding ErrorDetail}"
                   AlternationCount="{Binding ErrorCollection.Count}"
                   EnableColumnVirtualization="False"
-                  EnableRowVirtualization="False"
-                  
-                  >
+                  EnableRowVirtualization="False">
             <DataGrid.Columns>
                 <DataGridTemplateColumn>
                     <DataGridTemplateColumn.CellTemplate>
@@ -90,28 +71,10 @@
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <CheckBox Name="cbFix"  IsChecked="{Binding IsFixed, UpdateSourceTrigger=PropertyChanged}">
-                                <i:Interaction.Triggers>
-                                    <i:EventTrigger EventName="Checked">
-                                        <i:InvokeCommandAction Command="{Binding ElementName=dgErrors, Path=DataContext.UpdateFixedErrorCommand}">
-                                            <i:InvokeCommandAction.CommandParameter>
-                                                <Binding ElementName="cbFix" Path="DataContext"></Binding>
-                                            </i:InvokeCommandAction.CommandParameter>
-                                        </i:InvokeCommandAction>
-                                    </i:EventTrigger>
-                                    <i:EventTrigger EventName="Unchecked">
-                                        <i:InvokeCommandAction Command="{Binding ElementName=dgErrors, Path=DataContext.UpdateFixedErrorCommand}">
-                                            <i:InvokeCommandAction.CommandParameter>
-                                                <Binding ElementName="cbFix" Path="DataContext"></Binding>
-                                            </i:InvokeCommandAction.CommandParameter>
-                                        </i:InvokeCommandAction>
-                                    </i:EventTrigger>
-                                </i:Interaction.Triggers>
                             </CheckBox>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                
-                <!--<DataGridTextColumn Binding="{Binding  AlternationIndex, RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>-->
                 <DataGridTemplateColumn Header="Название addin-а" Width="200" >
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -146,7 +109,7 @@
         </Grid>
         <StatusBar Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
             <TextBlock Text="Количество ошибок: "/>
-            <TextBlock Text="{Binding ErrorCollection.Count}"></TextBlock>
+            <TextBlock Text="{Binding ElementName=dgErrors, Path=Items.Count}"></TextBlock>
         </StatusBar>
     </Grid>
 </Window>
