@@ -30,6 +30,7 @@ namespace Errors.ViewModel
         public string SelectedNameAddin { get; set; } = "Все ошибки";
         public bool IsSelectedUnfixedError { get; set; }
 
+
         public ObservableCollection<Error> UnfixedErrorCollection { get; set; }=new ObservableCollection<Error>();
         public ObservableCollection<Error> TempName { get; set; }
         public ObservableCollection<Error> TempFixing { get; 
