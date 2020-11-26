@@ -17,7 +17,7 @@ namespace Errors.Models
         public string Massage { get; set; }
         public string StackTrace { get; set; }
         public bool IsFixed { get; set; }
-
+        public string Version { get; set; }
         public DateTime Time
         {
             get => DateTime.Parse(TimeEx);

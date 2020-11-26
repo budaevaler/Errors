@@ -10,9 +10,11 @@ using System.Threading.Tasks;
 using System.Windows.Data;
 using Errors.Core;
 using Errors.Models;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PropertyChanged;
+using System.Windows.Forms;
 
 namespace Errors.ViewModel
 {
@@ -21,14 +23,14 @@ namespace Errors.ViewModel
 
         #region Fields
 
-        private static string PathToErrors = "D:\\Работа\\Временные файлы\\LoggerJournal";
+        private static string PathToErrors = "R:\\Объекты\\LoggerJournal";
         private bool _isSelectedUnfixedError;
         private string _selectedNameAddin;
+        private int uniqueErrors;
         #endregion
 
         #region Properties
         public List<string> NameAddinCollection { get; set; }= new List<string>();
-
         public string SelectedNameAddin
         {
             get => _selectedNameAddin;
@@ -40,7 +42,6 @@ namespace Errors.ViewModel
                 ErrorCollectionViewSource?.View?.Refresh();
             }
         }
-
         public bool IsSelectedUnfixedError
         {
             get => _isSelectedUnfixedError;
@@ -56,11 +57,23 @@ namespace Errors.ViewModel
             }
         }
         public ObservableCollection<Error> ErrorCollection { get; set; }
-
         public CollectionViewSource ErrorCollectionViewSource { get; set; }
-
         public Error ErrorDetail { get; set; }
 
+        public int UniqueErrors
+        {
+            get
+            {
+                if (SelectedNameAddin!="Все ошибки")
+                    return ErrorCollection.Where(x => x.NameAddin == SelectedNameAddin).Select(x => x.Massage).Distinct()
+                    .Count();
+                else
+                    return ErrorCollection.Select(x => x.Massage).Distinct().Count();
+            }
+            set => uniqueErrors = value;
+        }
+
+        public string ErrorPath { get; set; } = PathToErrors;
         #endregion
 
         #region Commands
@@ -86,8 +99,25 @@ namespace Errors.ViewModel
                 }
 
             }
+            
         });
 
+
+        public RelayCommand OpenFolderCommand => new RelayCommand(o =>
+        {
+            var window = new FolderBrowserDialog()
+            {
+                Description = "Выберите папку с файлами, содержащими информацию об ошибках"
+            };
+            if (o is string path) window.SelectedPath = path;
+            var result = window.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                ErrorPath = window.SelectedPath;
+                Initialize();
+            }
+                
+        });
         #endregion
 
         #region Methods
@@ -95,7 +125,7 @@ namespace Errors.ViewModel
         public void Initialize()
         {
             ErrorCollection=new ObservableCollection<Error>();
-            var files = Directory.GetFiles(PathToErrors);
+            var files = Directory.GetFiles(ErrorPath);
             foreach (var file in files)
             {
                 StreamReader sr = new StreamReader(file);

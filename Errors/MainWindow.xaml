@@ -12,7 +12,7 @@
         xmlns:converter="clr-namespace:Errors.Converters"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance viewModel:ErrorViewModel, IsDesignTimeCreatable=False}"
-        Title="Errors" Height="800" Width="1600">
+        Title="Errors" Height="800" Width="1750">
     <Window.Resources>
         <converter:StartAtOneConverter x:Key="AtOneConverter"></converter:StartAtOneConverter>
     </Window.Resources>
@@ -32,22 +32,30 @@
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
-            <ComboBox ItemsSource="{Binding NameAddinCollection}" SelectedItem="{Binding SelectedNameAddin}" Width="380" Margin="10 0 0 10">
+        <StackPanel Orientation="Vertical"  Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Выберите папку с ошибками: " Margin="10"/>
+                <TextBox Width="350" Text="{Binding Path=ErrorPath}" Margin="0 7 0 0"/>
+                <Button Style="{StaticResource MaterialDesignFlatButton}" Command="{Binding OpenFolderCommand}"
+                        CommandParameter="{Binding ErrorPath}">
+                    <materialDesign:PackIcon Kind="Folder" Foreground="Black"></materialDesign:PackIcon>
+                </Button>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+            <ComboBox ItemsSource="{Binding NameAddinCollection}" SelectedItem="{Binding SelectedNameAddin}" Width="530" Margin="10 0 0 10">
             </ComboBox>
             <materialDesign:PopupBox Margin="10 0 0 10" >
-            <materialDesign:PopupBox.ToggleContent>
-                <materialDesign:PackIcon Kind="Filter"/>
-            </materialDesign:PopupBox.ToggleContent>
-            <StackPanel Orientation="Horizontal">
-                <CheckBox IsChecked="{Binding IsSelectedUnfixedError}">
-                </CheckBox>
-                <TextBlock Text="Показать только неисправленные ошибки"></TextBlock>
+                <materialDesign:PopupBox.ToggleContent>
+                    <materialDesign:PackIcon Kind="Filter"/>
+                </materialDesign:PopupBox.ToggleContent>
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox IsChecked="{Binding IsSelectedUnfixedError}">
+                    </CheckBox>
+                    <TextBlock Text="Показать только неисправленные ошибки"></TextBlock>
+                </StackPanel>
+            </materialDesign:PopupBox>
             </StackPanel>
-        </materialDesign:PopupBox>
-            
         </StackPanel>
-
         <DataGrid ItemsSource="{Binding ErrorCollectionViewSource.View}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
@@ -91,6 +99,7 @@
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Имя пользователя" Binding="{Binding UserName, Mode=OneWay}"/>
                 <DataGridTextColumn Header="Время" Binding="{Binding Time, StringFormat=dd.MM.yyyy HH:mm, Mode=OneWay}"></DataGridTextColumn>
+                <DataGridTextColumn Header="Версия плагина" Binding="{Binding Version, Mode=OneWay}"/>
             </DataGrid.Columns>
         </DataGrid>
         <Grid Grid.Column="1" Grid.Row="1">
@@ -110,6 +119,8 @@
         <StatusBar Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
             <TextBlock Text="Количество ошибок: "/>
             <TextBlock Text="{Binding ElementName=dgErrors, Path=Items.Count}"></TextBlock>
+            <TextBlock Text=", количество уникальных ошибок: "/>
+            <TextBlock Text="{Binding UniqueErrors}"></TextBlock>
         </StatusBar>
     </Grid>
 </Window>
